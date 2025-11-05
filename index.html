@@ -21,7 +21,7 @@
     .nav a{margin-left:16px;color:var(--muted);font-weight:700}
     .nav a:hover{color:var(--ink)}
     .user-pill{margin-left:12px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#64748b;font-size:12px}
-    .btn-logout{margin-left:8px;border:none;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-weight:700;cursor:pointer}
+    .btn-logout{position:absolute;top:8px;right:12px;z-index:1000;padding:8px 12px;border-radius:999px;border:0;background:#ef4444;color:#fff;font-weight:600}
     .btn-logout:hover{background:#f8fafc}
     .grid{display:grid;gap:18px}
     .grid-2{grid-template-columns:2fr 1fr}
@@ -145,6 +145,11 @@
   #user-pill{max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 
+
+.hidden{display:none!important}
+
+/* added by patch: header positioning for logout button */
+header{position:relative}
 </style>
 </head>
 <body>
@@ -154,8 +159,9 @@
     <h2 id="logo-anim" class="logo" style="margin:0">VINHDZ</h2>
     <div class="user-rail">
       <span id="user-pill" class="pill">Chưa đăng nhập</span>
-      <button id="btn-logout" class="btn small ghost" style="display:none">Đăng xuất</button>
-    </div>
+<button id="btn-logout" class="btn btn-logout hide" type="button" title="Đăng xuất">Đăng xuất</button>
+
+          </div>
   </div>
   <nav class="container hdr-nav">
     <a href="#product">Sản phẩm</a>
@@ -457,16 +463,25 @@
     function canEdit(){ return isAdmin(); }
 
     function setUserUI(){
-      const s = getSession();
-      const navAdmin = $('#nav-admin');
-      const role = s?.role || '-';
-      $('#role-pill').textContent = 'role: ' + role;
-      $('#role-pill-top').textContent = 'role: ' + role;
-      if(s){ $('#user-pill').textContent = s.email; $('#btn-logout').classList.remove('hide'); }
-      else { $('#user-pill').textContent = 'Chưa đăng nhập'; $('#btn-logout').classList.add('hide'); }
-      if(s && (s.role==='admin' || s.role==='subadmin')) navAdmin.classList.remove('hide'); else navAdmin.classList.add('hide');
-      $('#read-only-badge').classList.toggle('hide', !isSubAdmin());
-    }
+  const s = (typeof getSession === 'function') ? getSession() : null;
+  const navAdmin = document.querySelector('#admin-link');
+  const role = s && s.role ? s.role : '-';
+  const rolePill = document.querySelector('#role-pill');
+  if(rolePill) rolePill.textContent = 'role: ' + role;
+  const userPill = document.querySelector('#user-pill');
+  if(userPill) userPill.textContent = s ? s.email : 'Chưa đăng nhập';
+  const btnLogout = document.querySelector('#btn-logout');
+  if(btnLogout){
+    if(s) btnLogout.classList.remove('hide');
+    else btnLogout.classList.add('hide');
+  }
+  if(navAdmin){
+    if(s && (s.role === 'admin' || s.role === 'subadmin')) navAdmin.classList.remove('hidden');
+    else navAdmin.classList.add('hidden');
+  }
+  const readOnlyBadge = document.querySelector('#read-only-badge');
+  if(readOnlyBadge && typeof isSubAdmin === 'function') readOnlyBadge.classList.toggle('hide', !isSubAdmin());
+}
     function showView(id){
       $$('.view').forEach(v=>v.classList.remove('active'));
       $(id).classList.add('active');
@@ -527,7 +542,7 @@
     function applyVoucher(code){
       const sess = getSession();
       const vlist = getVouchers(); const v = vlist[code];
-      const msg = $('#voucher-msg');
+      const msg = $('#voucher-input-msg');
       if(!v){ msg.textContent='Mã không hợp lệ.'; voucherState=null; $('#prod-voucher-view').textContent='—'; return; }
       const vuList = getVU();
       const hasAssignments = vuList.some(e=>e.code===code);
@@ -561,7 +576,7 @@
       alert('Đã tạo yêu cầu. Mã đơn: ' + order.id + (sess? '\nTài khoản: '+email : '\n(Chưa đăng nhập)'));
       $('#prod-status').textContent='Đã gửi yêu cầu (chờ báo giá)'; renderOrdersOfUser();
     }
-    $('#btn-apply-voucher').addEventListener('click', ()=>{ const code = ($('#voucher-input').value||'').trim().toUpperCase(); if(!code) return; applyVoucher(code); });
+    $('#btn-apply-voucher').addEventListener('click', ()=>{ const code = ($('#voucher-input-input').value||'').trim().toUpperCase(); if(!code) return; applyVoucher(code); });
     $('#pick-file').addEventListener('click', ()=> $('#file-input').click());
     $('#file-input').addEventListener('change', e=>{ attachedFile = e.target.files?.[0]||null; renderFileMeta(); });
     $('#dropzone').addEventListener('dragover', e=>{ e.preventDefault(); $('#dropzone').style.background='#eef2ff'; });
@@ -670,7 +685,7 @@
     $('#btn-apply-gacha').addEventListener('click', ()=>{
       const code = $('#btn-apply-gacha').dataset.code || '';
       if(!code) return alert('Chưa có mã hợp lệ để áp dụng.');
-      $('#voucher-input').value = code; applyVoucher(code); alert('Đã áp dụng mã: ' + code);
+      $('#voucher-input-input').value = code; applyVoucher(code); alert('Đã áp dụng mã: ' + code);
     });
 
     function loadFabPos(){
@@ -851,7 +866,7 @@
     $('#btn-export-csv').addEventListener('click', exportCSV);
 
     function renderVoucherTable(){
-      const tbody = $('#voucher-table tbody'); tbody.innerHTML='';
+      const tbody = $('#voucher-input-table tbody'); tbody.innerHTML='';
       const vlist = getVouchers(); const ro = !canEdit();
       Object.entries(vlist).forEach(([code, v])=>{
         const tr = document.createElement('tr');
@@ -859,7 +874,7 @@
         if(!ro){ tr.querySelector('.rm').addEventListener('click', ()=>{ const cur = getVouchers(); delete cur[code]; setVouchers(cur); renderVoucherTable(); renderVU(); }); }
         tbody.appendChild(tr);
       });
-      $('#voucher-controls').classList.toggle('disabled', ro);
+      $('#voucher-input-controls').classList.toggle('disabled', ro);
       const dl = $('#code-list'); dl.innerHTML=''; Object.keys(vlist).forEach(c=>{ const o=document.createElement('option'); o.value=c; dl.appendChild(o); });
     }
     $('#v-add').addEventListener('click', ()=>{
@@ -991,7 +1006,7 @@
   }
 
   // Auth wire (if inputs exist)
-  $("#login-btn")?.addEventListener("click", async (e)=>{
+  $("#btn-login")?.addEventListener("click", async (e)=>{
     e.preventDefault();
     const email = $("#login-email")?.value?.trim();
     const pass = $("#login-password")?.value ?? "";
@@ -1006,7 +1021,7 @@
     if (role==="admin"||role==="subadmin") location.hash="#admin";
   });
 
-  $("#register-btn")?.addEventListener("click", async (e)=>{
+  $("#btn-register")?.addEventListener("click", async (e)=>{
     e.preventDefault();
     const name = $("#reg-name")?.value?.trim() || "User";
     const email = $("#reg-email")?.value?.trim();
@@ -1021,7 +1036,7 @@
     location.hash="#auth";
   });
 
-  $("#logout-btn")?.addEventListener("click", async (e)=>{
+  $("#btn-logout")?.addEventListener("click", async (e)=>{
     e.preventDefault();
     await sb.auth.signOut();
     await refreshHeader();
@@ -1029,14 +1044,14 @@
   });
 
   // Create Order (if button exists)
-  $("#place-order-btn")?.addEventListener("click", async (e)=>{
+  $("#btn-place-order")?.addEventListener("click", async (e)=>{
     e.preventDefault();
     try{
       const { data:{ user } } = await sb.auth.getUser();
-      const qty = Number($("#qty")?.value || "1");
-      const note = $("#note")?.value || "";
-      const voucher = $("#voucher")?.value?.trim() || null;
-      const payMethod = $("#pay_method")?.value || document.querySelector("input[name='pay_method']:checked")?.value || "bank";
+      const qty = Number($("#prod-qty")?.value || "1");
+      const note = $("#prod-note")?.value || "";
+      const voucher = $("#voucher-input")?.value?.trim() || null;
+      const payMethod = $("#pay-bank")?.value || document.querySelector("input[name='pay_method']:checked")?.value || "bank";
       const file = document.querySelector("input[type='file']")?.files?.[0];
       const row = {
         id: "NP" + Date.now(),
@@ -1054,7 +1069,7 @@
 
   // My Orders (if table exists)
   async function renderMyOrders(){
-    const table = $("#my-orders-table"); if(!table) return;
+    const table = $("#orders-table"); if(!table) return;
     const tbody = table.querySelector("tbody"); if(!tbody) return;
     const { data:{ user } } = await sb.auth.getUser();
     if(!user){ tbody.innerHTML = "<tr><td colspan='5'>Vui lòng đăng nhập.</td></tr>"; return; }
@@ -1121,7 +1136,7 @@
 
   // Vouchers (admin list if exists)
   async function renderVouchersAdmin(){
-    const table = $("#vc-table"); if(!table) return;
+    const table = $("#voucher-table"); if(!table) return;
     const tbody = table.querySelector("tbody"); if(!tbody) return;
     const { data, error } = await sb.from("vouchers").select("*").order("code");
     if (error){ tbody.innerHTML="<tr><td colspan='5'>"+error.message+"</td></tr>"; return; }
@@ -1148,18 +1163,18 @@
   }
 
   // Apply voucher (product side) — only shows info
-  $("#apply-voucher")?.addEventListener("click", async (e)=>{
+  $("#btn-apply-voucher")?.addEventListener("click", async (e)=>{
     e.preventDefault();
-    const code = $("#voucher")?.value?.trim().toUpperCase();
+    const code = $("#voucher-input")?.value?.trim().toUpperCase();
     if(!code) return;
-    const msg = $("#voucher-message") || $("#voucher-result");
+    const msg = $("#voucher-input-message") || $("#voucher-input-result");
     const { data: v } = await sb.from("vouchers").select("*").eq("code", code).maybeSingle();
     if(!v){ if(msg) msg.textContent = "Mã không hợp lệ hoặc đã hết."; return; }
     if(msg) msg.textContent = "Đã áp dụng: " + code + " (" + v.type + " " + v.value + ")";
   });
 
   // Gacha (if your page still uses gacha button with id 'gacha-btn')
-  $("#gacha-btn")?.addEventListener("click", async ()=>{
+  $("#btn-gacha")?.addEventListener("click", async ()=>{
     const { data:{ user } } = await sb.auth.getUser();
     if(!user) return alert("Đăng nhập để rút gacha.");
     const today = new Date().toISOString().slice(0,10);
@@ -1197,10 +1212,98 @@
     try{
       if(!document.getElementById('logo-anim')){
         var el = document.querySelector('.logo') || Array.from(document.querySelectorAll('h1,h2,h3')).find(e=>/vinhdz/i.test(e.textContent||''));
-        if(el) el.id = 'logo-anim';
+        if(el) el.id = 'logo-anim-2';
       }
     }catch(e){}
   })();
+</script>
+
+
+<!-- added by patch: ensure admin hidden by default -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    var navAdmin = document.querySelector('#admin-link');
+    if(navAdmin) navAdmin.classList.add('hidden');
+  } catch(e){}
+});
+</script>
+
+<section id="admin" style="display:none"></section>
+
+<!-- added by final patch: robustness shims -->
+<script>
+(function(){
+  function callIfExists(fnName /*, args... */){
+    try{
+      var fn = (typeof window !== 'undefined') ? window[fnName] : undefined;
+      if(typeof fn === 'function'){
+        var args = Array.prototype.slice.call(arguments, 1);
+        return fn.apply(window, args);
+      }
+    }catch(e){ console.warn('callIfExists('+fnName+') error', e); }
+    return undefined;
+  }
+  window.callIfExists = callIfExists;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      var legacy = document.getElementById('pay_method');
+      if(!legacy){
+        legacy = document.createElement('input');
+        legacy.type = 'hidden';
+        legacy.id = 'pay_method';
+        document.body.appendChild(legacy);
+      }
+      function updateLegacyPay(){
+        var checked = document.querySelector('input[name="pay_method"]:checked');
+        legacy.value = checked ? checked.value : '';
+      }
+      var payBank = document.getElementById('pay-bank');
+      var payCod  = document.getElementById('pay-cod');
+      if(payBank) payBank.addEventListener('change', updateLegacyPay);
+      if(payCod)  payCod.addEventListener('change', updateLegacyPay);
+      document.body.addEventListener('change', function(ev){
+        if(ev && ev.target && ev.target.name === 'pay_method') updateLegacyPay();
+      });
+      updateLegacyPay();
+    }catch(e){ console.warn('legacy pay_method shim error', e); }
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    try{ var navAdmin = document.querySelector('#admin-link'); if(navAdmin) navAdmin.classList.add('hidden'); }catch(e){}
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    callIfExists('initSupabase');
+    callIfExists('initAuth');
+    callIfExists('initUI');
+    callIfExists('initCharts');
+  });
+})();
+</script>
+
+
+<!-- added by patch: logout button wiring -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    var btn = document.getElementById('btn-logout');
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+      try{
+        if(typeof handleLogout === 'function'){ handleLogout(); }
+        else{
+          // fallback: clear session from localStorage if used
+          try{ localStorage.removeItem('session'); }catch(e){}
+          // simple reload/redraw
+          if(typeof setUserUI === 'function') setUserUI();
+          else location.reload();
+        }
+      }catch(e){ console.warn('logout error', e); }
+    });
+  }catch(e){}
+});
 </script>
 
 </body>
