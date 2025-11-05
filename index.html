@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaPrint Mini App — v10</title>
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+      --brand:#10b981; --brand-dark:#059669; --ink:#111827; --danger:#ef4444;
+      --ring:#dbeafe; --border:#e5e7eb; --shadow:0 14px 28px rgba(2,6,23,.07);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    .container{width:92%;max-width:1100px;margin:0 auto;padding:18px 0}
+    header.navbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 2px 6px rgba(0,0,0,.05);z-index:10}
+    .navbar .inner{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+    .logo{margin:0;font-size:22px;color:var(--ink);letter-spacing:.3px}
+    .nav a{margin-left:16px;color:var(--muted);font-weight:700}
+    .nav a:hover{color:var(--ink)}
+    .user-pill{margin-left:12px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#64748b;font-size:12px}
+    .btn-logout{margin-left:8px;border:none;background:#fff;border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-weight:700;cursor:pointer}
+    .btn-logout:hover{background:#f8fafc}
+    .grid{display:grid;gap:18px}
+    .grid-2{grid-template-columns:2fr 1fr}
+    @media(max-width:920px){.grid-2{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+    .card h2{margin:0 0 10px 0}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .right{display:flex;justify-content:flex-end}
+    label{display:block;font-weight:700;margin:10px 0 6px}
+    input[type="text"],input[type="email"],input[type="password"],input[type="number"],select,textarea{
+      width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;background:#fff;outline:none
+    }
+    input:focus,select:focus,textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 4px var(--ring)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer}
+    .btn.brand{background:var(--brand);color:#fff}
+    .btn.brand:hover{background:var(--brand-dark)}
+    .btn.ghost{background:#fff;border:1px solid var(--border);color:var(--ink)}
+    .btn.danger{background:var(--danger);color:#fff}
+    .btn.small{padding:8px 10px;font-size:13px;border-radius:9px}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:12px;background:#fff;color:#64748b}
+    .view{display:none}.view.active{display:block}
+    /* PRODUCT */
+    .prod-wrap{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+    @media(max-width:920px){.prod-wrap{grid-template-columns:1fr}}
+    .dropzone{border:2px dashed #cbd5e1;background:#f8fafc;border-radius:12px;padding:16px;text-align:center;color:#475569;cursor:pointer}
+    .dropzone:hover{background:#f1f5f9}
+    .dropzone input{display:none}
+    .file-meta{margin-top:8px;font-size:13px}
+    .summary-row{display:flex;justify-content:space-between;margin:8px 0;font-size:15px}
+    .summary-row.total{font-size:18px;margin-top:10px}
+    hr{border:none;border-top:1px solid #eee;margin:12px 0}
+    .paybox{background:#f8fafc;border:1px dashed #d1d5db;border-radius:12px;padding:12px}
+    .copy{border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700}
+    .copy:hover{background:#f3f4f6}
+    /* GACHA FAB - draggable */
+    .gacha-fab{position:fixed;top:50%;right:12px;transform:translateY(-50%);z-index:20;display:grid;gap:6px;place-items:center;user-select:none}
+    .gacha-fab .btn{border-radius:999px;cursor:grab}
+    .gacha-fab.dragging .btn{cursor:grabbing}
+    /* Modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30}
+    .modal.show{display:flex}
+    .modal-bg{position:absolute;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
+    .modal-card{position:relative;background:#fff;border-radius:16px;border:1px solid var(--border);box-shadow:var(--shadow);padding:16px;max-width:560px;width:92%}
+    .hide{display:none!important}
+    /* Tables */
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid var(--border);padding:8px;text-align:left;vertical-align:top}
+    th{background:#f8fafc}
+    .table-actions .btn{margin-right:6px}
+    .disabled{opacity:.6;pointer-events:none}
+    .readonly-note{color:#ef4444;font-weight:700;margin-left:8px}
+    .code-badge{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12px}
+  
+/* === Neon glow for VINHDZ (purple) === */
+#logo-anim{
+  position: relative;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #a78bfa; /* neon purple */
+  text-shadow:
+    0 0 6px rgba(167,139,250,.70),
+    0 0 14px rgba(147,112,219,.60),
+    0 0 28px rgba(124,58,237,.55);
+  animation: glowPulse 2.4s ease-in-out infinite alternate,
+             glowBlink 8s linear infinite;
+}
+#logo-anim::after{
+  content:"";
+  position:absolute; inset:-6px -10px;
+  background: radial-gradient(60% 60% at 50% 50%, rgba(167,139,250,.25), transparent 70%);
+  filter: blur(14px);
+  z-index:-1;
+  animation: aura 6s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%{
+    text-shadow:
+      0 0 2px rgba(167,139,250,.5),
+      0 0 6px rgba(147,112,219,.45),
+      0 0 12px rgba(124,58,237,.40);
+    transform: scale(1);
+  }
+  100%{
+    text-shadow:
+      0 0 10px rgba(167,139,250,.9),
+      0 0 24px rgba(147,112,219,.8),
+      0 0 48px rgba(124,58,237,.75);
+    transform: scale(1.02);
+  }
+}
+@keyframes glowBlink{
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: .85; }
+  94% { opacity: .45; }
+  95% { opacity: .95; }
+  96% { opacity: .7; }
+  97% { opacity: 1; }
+  98% { opacity: .2; }
+  99% { opacity: .95; }
+}
+@keyframes aura{
+  0%   { transform: scale(1) translateY(0);   opacity:.8; }
+  50%  { transform: scale(1.03) translateY(-3px); opacity:1; }
+  100% { transform: scale(1) translateY(0);   opacity:.8; }
+}
+@media (prefers-reduced-motion: reduce){
+  #logo-anim{ animation: none; }
+}
+
+
+/* ===== Compact mobile header ===== */
+.hdr{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:100}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.user-rail{display:flex;align-items:center;gap:8px;max-width:60vw}
+.hdr-nav{display:flex;gap:18px;align-items:center;padding:6px 0;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hdr-nav::-webkit-scrollbar{display:none}
+.hdr-nav a{font-weight:800;color:var(--muted)}
+.hdr-nav a:hover{color:#111827}
+@media(max-width:640px){
+  #user-pill{max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+
+</style>
+</head>
+<body>
+  
+<header class="hdr">
+  <div class="container hdr-top">
+    <h2 id="logo-anim" class="logo" style="margin:0">VINHDZ</h2>
+    <div class="user-rail">
+      <span id="user-pill" class="pill">Chưa đăng nhập</span>
+      <button id="btn-logout" class="btn small ghost" style="display:none">Đăng xuất</button>
+    </div>
+  </div>
+  <nav class="container hdr-nav">
+    <a href="#product">Sản phẩm</a>
+    <a href="#auth">Đăng nhập</a>
+    <a href="#register">Đăng ký</a>
+    <a id="admin-link" href="#admin" class="hidden">Admin</a>
+  </nav>
+</header>
+
+
+  <main class="container">
+    <section id="view-product" class="view active">
+      <div class="grid prod-wrap">
+        <section class="card">
+          <h2>In theo yêu cầu</h2>
+          <p class="muted">Gửi 1 tệp thiết kế (PDF/AI/PNG/JPG…). Đơn sẽ được tạo và chuyển cho Admin báo giá.</p>
+          <div class="row">
+            <div style="flex:1;min-width:180px">
+              <label>Số lượng</label>
+              <input type="number" id="prod-qty" value="1" min="1" />
+            </div>
+            <div style="flex:1;min-width:180px">
+              <label>Đơn vị</label>
+              <select id="prod-unit">
+                <option value="cai" selected>Cái</option>
+                <option value="bo">Bộ</option>
+                <option value="hop">Hộp</option>
+              </select>
+            </div>
+          </div>
+          <label>Ghi chú (tuỳ chọn)</label>
+          <input type="text" id="prod-note" placeholder="Ví dụ: Cán mờ 2 mặt, khổ A4…" />
+          <label style="margin-top:10px">Tệp in (1 tệp)</label>
+          <div id="dropzone" class="dropzone">
+            <strong>Thả tệp vào đây</strong><br/>
+            <small>Chấp nhận: PDF, AI, PSD, CDR, PNG, JPG</small><br/><br/>
+            <button id="pick-file" class="btn ghost small" type="button">Chọn tệp</button>
+            <input id="file-input" type="file" accept=".pdf,.ai,.psd,.cdr,image/*" />
+          </div>
+          <div id="file-meta" class="file-meta"><em>Chưa có tệp.</em></div>
+        </section>
+
+        <aside class="card">
+          <h2>Yêu cầu & Thanh toán</h2>
+          <div class="summary-row"><span>Trạng thái</span><strong id="prod-status">Chờ báo giá</strong></div>
+          <div class="summary-row"><span>Voucher</span><strong id="prod-voucher-view">—</strong></div>
+          <hr/>
+          <label>Mã giảm giá</label>
+          <div class="row"><input id="voucher-input" type="text" placeholder="Nhập mã..." /><button id="btn-apply-voucher" class="btn small">Áp dụng</button></div>
+          <div id="voucher-msg" class="muted" style="min-height:18px;margin-top:6px"></div>
+          <div class="muted" style="margin-top:6px">* Giá & phí ship do Admin báo. Mã giảm giá áp khi báo giá.</div>
+          <hr/>
+          <label>Phương thức (ưu tiên)</label>
+          <div class="row">
+            <label class="row"><input type="radio" name="pay" value="bank" checked/> Online (Chuyển khoản)</label>
+            <label class="row"><input type="radio" name="pay" value="cod"/> COD (khi nhận hàng)</label>
+          </div>
+          <div id="pay-bank" class="paybox" style="margin-top:8px">
+            <div><strong>STK:</strong> <span id="bank-stk">1047262114</span> — <strong>Chủ TK:</strong> <span id="bank-name">TRẦN NGUYỄN PHÚ VINH</span></div>
+            <div class="row" style="margin-top:8px">
+              <button class="copy" data-copy="1047262114">Copy STK</button>
+              <button class="copy" data-copy="TRẦN NGUYỄN PHÚ VINH">Copy Chủ TK</button>
+            </div>
+          </div>
+          <div id="pay-cod" class="paybox hide" style="margin-top:8px"><div><strong>COD:</strong> Thanh toán khi nhận hàng.</div></div>
+          <hr/>
+          <div class="summary-row total"><strong>Tổng cộng</strong><strong id="prod-total">Chờ báo giá</strong></div>
+          <div class="right" style="margin-top:12px"><button id="btn-checkout" class="btn brand">Đặt in (lưu yêu cầu)</button></div>
+          <div class="muted" style="margin-top:8px">Yêu cầu sẽ hiển thị trong <b>Đơn của tôi</b> và trong Admin.</div>
+        </aside>
+      </div>
+
+      <section class="card" style="margin-top:16px">
+        <h3>Mã của bạn</h3>
+        <div id="user-codes"></div>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h3>Đơn của tôi</h3>
+        <div id="orders-of-user"></div>
+      </section>
+    </section>
+
+    <div id="gacha-fab" class="gacha-fab" title="Gacha">
+      <button id="btn-gacha" class="btn small brand">Gacha</button>
+    </div>
+
+    <div id="gacha-modal" class="modal">
+      <div class="modal-bg" id="gacha-close"></div>
+      <div class="modal-card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div class="row"><h3 style="margin:0">Gacha</h3><span id="gacha-limit-note" class="pill" style="margin-left:8px"></span></div>
+          <button class="btn small ghost" id="gacha-close-btn">Đóng</button>
+        </div>
+        <div style="margin-top:10px">
+          <p class="muted">Mỗi tài khoản chỉ được rút <strong>1 lần/ngày</strong>. Kết quả sẽ xuất mã ngay nếu trúng.</p>
+          <div id="gacha-result" class="pill">Chưa rút</div>
+          <div class="row" style="gap:10px;margin-top:10px">
+            <button id="btn-gacha-draw" class="btn brand">Rút ngay</button>
+            <button id="btn-apply-gacha" class="btn ghost">Áp dụng mã (nếu trúng)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section id="view-auth" class="view">
+      <div class="grid" style="grid-template-columns:1fr">
+        <section class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2>Đăng nhập</h2><span class="pill">Local demo</span>
+          </div>
+          <label>Email</label><input id="login-email" type="email" placeholder="you@example.com" />
+          <label>Mật khẩu</label><input id="login-pass" type="password" placeholder="•••••••" />
+          <div class="row" style="justify-content:space-between;margin-top:10px">
+            <button id="btn-to-register" class="btn ghost">Chưa có tài khoản? Đăng ký</button>
+            <button id="btn-login" class="btn brand">Đăng nhập</button>
+          </div>
+          <div id="login-msg" class="muted" style="min-height:18px;margin-top:6px"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-register" class="view">
+      <div class="grid" style="grid-template-columns:1fr">
+        <section class="card">
+          <h2>Tạo tài khoản</h2>
+          <div class="row" style="gap:12px">
+            <div style="flex:1"><label>Họ và tên</label><input id="reg-name" type="text" placeholder="Nguyễn Văn A" /></div>
+            <div style="flex:1"><label>Email</label><input id="reg-email" type="email" placeholder="you@example.com" /></div>
+          </div>
+          <div class="row" style="gap:12px">
+            <div style="flex:1"><label>Mật khẩu</label><input id="reg-pass1" type="password" placeholder="Tối thiểu 6 ký tự" /></div>
+            <div style="flex:1"><label>Nhập lại mật khẩu</label><input id="reg-pass2" type="password" placeholder="Nhập lại mật khẩu" /></div>
+          </div>
+          <label class="row" style="gap:8px;margin-top:6px"><input type="checkbox" id="reg-agree" /> Tôi đồng ý điều khoản</label>
+          <div class="row" style="justify-content:space-between;margin-top:10px">
+            <button id="btn-back-login" class="btn ghost">← Trở lại đăng nhập</button>
+            <button id="btn-register" class="btn brand">Tạo tài khoản</button>
+          </div>
+          <div id="reg-msg" class="muted" style="min-height:18px;margin-top:6px"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-admin" class="view">
+      <div class="grid">
+        <section class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div class="row"><h2 style="margin:0">Bảng điều khiển Admin</h2><span id="read-only-badge" class="readonly-note hide">Chế độ xem (Phó admin)</span></div>
+            <div class="pill" id="role-pill">role: -</div>
+          </div>
+          <div class="muted">Quản lý đơn, mã giảm giá, gacha & quyền.</div>
+        </section>
+
+        <section class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>Đơn đặt hàng</h3>
+            <div class="row"><button id="btn-export-csv" class="btn small ghost">Xuất CSV</button></div>
+          </div>
+          <div class="muted">Phó admin chỉ xem. Chỉ Admin mới chỉnh sửa.</div>
+          <div style="overflow:auto">
+            <table id="orders-table">
+              <thead><tr>
+                <th>ID</th><th>Email</th><th>SL</th><th>Đơn giá</th><th>Tạm tính</th><th>Ship</th><th>Mã</th><th>Giảm</th><th>Tổng</th><th>Thanh toán</th><th>Trạng thái</th><th>Ghi chú</th><th>Tệp</th><th>Hành động</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Quản lý mã giảm giá (toàn hệ thống)</h3>
+          <div class="row" id="voucher-controls" style="gap:8px;flex-wrap:wrap">
+            <input id="v-code" type="text" placeholder="CODE (viết liền, không dấu)" style="flex:1;min-width:160px"/>
+            <select id="v-type" style="flex:1;min-width:120px">
+              <option value="fixed">fixed (VNĐ)</option>
+              <option value="percent">percent (%)</option>
+              <option value="freeship">freeship</option>
+            </select>
+            <input id="v-value" type="number" placeholder="value" style="flex:1;min-width:100px"/>
+            <input id="v-min" type="number" placeholder="min (điều kiện đơn tối thiểu)" style="flex:1;min-width:140px"/>
+            <input id="v-cap" type="number" placeholder="cap (giới hạn giảm tối đa)" style="flex:1;min-width:140px"/>
+            <input id="v-max" type="number" placeholder="max uses (0 = unlimited)" style="flex:1;min-width:160px"/>
+            <button id="v-add" class="btn small">Thêm / Cập nhật</button>
+          </div>
+          <div style="overflow:auto;margin-top:10px">
+            <table id="voucher-table">
+              <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min</th><th>Cap</th><th>Used</th><th>Max</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Cấp mã theo tài khoản</h3>
+          <div class="muted">Gán mã cho một email nhất định. Nếu mã có gán cho tài khoản, chỉ tài khoản đó mới dùng được. Có thể đặt số lượt (0 = không giới hạn).</div>
+          <datalist id="code-list"></datalist>
+          <div class="row" id="vu-controls" style="gap:8px;flex-wrap:wrap;margin-top:6px">
+            <input id="vu-email" type="email" placeholder="email@domain.com" style="flex:2;min-width:220px"/>
+            <input id="vu-code" type="text" list="code-list" placeholder="CODE" style="flex:1;min-width:140px"/>
+            <input id="vu-max" type="number" placeholder="số lượt (0=∞)" style="flex:1;min-width:120px"/>
+            <button id="vu-add" class="btn small">Thêm / Cập nhật</button>
+          </div>
+          <div style="overflow:auto;margin-top:10px">
+            <table id="vu-table">
+              <thead><tr><th>Email</th><th>Code</th><th>Used</th><th>Max</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Cấu hình Gacha</h3>
+          <div class="muted">Danh sách phần thưởng (rút 1 lần/ngày). Trường <strong>Code</strong> có thể trống để ra "Chúc may mắn".</div>
+          <div id="gacha-config"></div>
+          <div class="row" id="gacha-buttons" style="gap:12px;flex-wrap:wrap;margin-top:10px">
+            <button id="gacha-add" class="btn small">Thêm mục</button>
+            <button id="gacha-save" class="btn small brand">Lưu cấu hình</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Quản lý quyền</h3>
+          <div class="muted">Phó admin không có quyền thay đổi.</div>
+          <div style="overflow:auto;margin-top:10px">
+            <table id="users-table">
+              <thead><tr><th>Email</th><th>Tên</th><th>Role</th><th>Hành động</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const enc = new TextEncoder();
+    const toHex = buf => Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const VND = new Intl.NumberFormat('vi-VN'); const fmt = n => VND.format(Math.max(0, Math.round(n))) + ' VNĐ';
+    async function hashSHA256(str){ const digest = await crypto.subtle.digest('SHA-256', enc.encode(str)); return toHex(digest); }
+    function load(key, def){ try{ const v = localStorage.getItem(key); return v? JSON.parse(v): def; } catch { return def; } }
+    function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+    const ADMIN_EMAIL = 'phuvinhtrannguyen@gmail.com'; const ADMIN_PASS = 'Vinh@2008';
+    const COUNT_STATUSES = ['processing','paid','shipped','completed'];
+
+    function getUsers(){ return load('np_users', {}); }
+    function setUsers(u){ save('np_users', u); }
+    function getSession(){ return load('np_session', null); }
+    function setSession(s){ save('np_session', s); }
+    function clearSession(){ localStorage.removeItem('np_session'); }
+
+    function voucherDefaults(){ return {
+      'TRIANKHACHVIP': {type:'fixed', value:50000, used:0, maxUses:0},
+      'SALE10':        {type:'percent', value:10, used:0, maxUses:0},
+      'FREESHIP':      {type:'freeship', used:0, maxUses:0},
+      'COMBO100K':     {type:'fixed', value:100000, min:1000000, used:0, maxUses:0},
+      'NOVAPRINT20':   {type:'percent', value:20, cap:200000, used:0, maxUses:0}
+    }; }
+    function getVouchers(){ return load('np_vouchers', voucherDefaults()); }
+    function setVouchers(v){ save('np_vouchers', v); }
+    function isVoucherAvailable(v){ if(!v) return false; return (v.maxUses||0)===0 || (v.used||0) < (v.maxUses||0); }
+
+    function getVU(){ return load('np_voucher_users', []); }
+    function setVU(list){ save('np_voucher_users', list); }
+    function findVU(email, code){ const list=getVU(); return list.find(x=>x.email===email && x.code===code); }
+    function vuLeft(email, code){ const e=findVU(email,code); if(!e) return Infinity; const max = Number(e.maxUses||0); const used = Number(e.used||0); return max===0 ? Infinity : Math.max(0, max-used); }
+
+    function getOrders(){ return load('np_orders', []); }
+    function setOrders(o){ save('np_orders', o); }
+
+    function ucKey(email){ return 'np_codes_' + (email||'guest'); }
+    function getUserCodes(email){ return load(ucKey(email), []); }
+    function pushUserCode(email, code, label){
+      if(!email || !code) return;
+      const list = getUserCodes(email);
+      list.push({code, label:label||code, date: todayYMD()});
+      save(ucKey(email), list);
+    }
+
+    function gachaDefaults(){ return [
+      {label:'SALE10', code:'SALE10', weight:1},
+      {label:'FREESHIP', code:'FREESHIP', weight:1},
+      {label:'-50k', code:'TRIANKHACHVIP', weight:1},
+      {label:'20% (max 200k)', code:'NOVAPRINT20', weight:1},
+      {label:'-100k (≥1tr)', code:'COMBO100K', weight:1},
+      {label:'Chúc may mắn', code:null, weight:2}
+    ]; }
+    function getGacha(){ const cur = load('np_gacha', null); return cur || gachaDefaults(); }
+    function setGacha(g){ save('np_gacha', g); }
+
+    function todayYMD(){ const d=new Date(); const y=d.getFullYear(); const m=('0'+(d.getMonth()+1)).slice(-2); const dd=('0'+d.getDate()).slice(-2); return `${y}-${m}-${dd}`; }
+    function getGachaMap(){ return load('np_gacha_map', {}); }
+    function setGachaMap(m){ save('np_gacha_map', m); }
+
+    function isAdmin(){ const s=getSession(); return s && s.role==='admin'; }
+    function isSubAdmin(){ const s=getSession(); return s && s.role==='subadmin'; }
+    function canEdit(){ return isAdmin(); }
+
+    function setUserUI(){
+      const s = getSession();
+      const navAdmin = $('#nav-admin');
+      const role = s?.role || '-';
+      $('#role-pill').textContent = 'role: ' + role;
+      $('#role-pill-top').textContent = 'role: ' + role;
+      if(s){ $('#user-pill').textContent = s.email; $('#btn-logout').classList.remove('hide'); }
+      else { $('#user-pill').textContent = 'Chưa đăng nhập'; $('#btn-logout').classList.add('hide'); }
+      if(s && (s.role==='admin' || s.role==='subadmin')) navAdmin.classList.remove('hide'); else navAdmin.classList.add('hide');
+      $('#read-only-badge').classList.toggle('hide', !isSubAdmin());
+    }
+    function showView(id){
+      $$('.view').forEach(v=>v.classList.remove('active'));
+      $(id).classList.add('active');
+      if(id==='#view-admin') renderAdmin();
+      if(id==='#view-product'){ renderOrdersOfUser(); renderUserCodesPanel(); }
+    }
+    function route(){
+      const hash = location.hash || '#product';
+      if(hash==='#product') showView('#view-product');
+      else if(hash==='#auth') showView('#view-auth');
+      else if(hash==='#register') showView('#view-register');
+      else if(hash==='#admin'){
+        const s = getSession();
+        if(!s || (s.role!=='admin' && s.role!=='subadmin')){ location.hash = '#auth'; setTimeout(()=>$('#login-msg').textContent='Bạn cần quyền admin/phó admin để vào trang này.',0); }
+        else showView('#view-admin');
+      }
+      setUserUI();
+    }
+    window.addEventListener('hashchange', route);
+    $('#btn-logout').addEventListener('click', ()=>{ clearSession(); route(); });
+    $('#btn-to-register').addEventListener('click', ()=>{ location.hash = '#register'; });
+    $('#btn-back-login').addEventListener('click', ()=>{ location.hash = '#auth'; });
+
+    async function login(email, password){
+      if(email===ADMIN_EMAIL && password===ADMIN_PASS){
+        const users = getUsers();
+        if(!users[email]) users[email] = {name:'Administrator', email, role:'admin', hash: await hashSHA256(ADMIN_PASS)};
+        else users[email].role='admin';
+        setUsers(users); setSession({email, role:'admin', ts:Date.now()}); return {ok:true, role:'admin'};
+      }
+      const users = getUsers(); const u = users[email];
+      if(!u) return {ok:false, msg:'Tài khoản không tồn tại.'};
+      const hash = await hashSHA256(password);
+      if(hash!==u.hash) return {ok:false, msg:'Mật khẩu không đúng.'};
+      setSession({email, role:u.role||'user', ts:Date.now()}); return {ok:true, role:u.role||'user'};
+    }
+    async function register(name,email,pass1,pass2,agree){
+      if(!name||!email||!pass1||!pass2) return {ok:false,msg:'Điền đầy đủ thông tin.'};
+      if(pass1!==pass2) return {ok:false,msg:'Mật khẩu nhập lại không khớp.'};
+      if(pass1.length<6) return {ok:false,msg:'Mật khẩu tối thiểu 6 ký tự.'};
+      if(!agree) return {ok:false,msg:'Bạn cần đồng ý điều khoản.'};
+      const users = getUsers(); if(users[email]) return {ok:false,msg:'Email đã tồn tại.'};
+      users[email] = {name,email,role:'user',hash:await hashSHA256(pass1)}; setUsers(users); return {ok:true,msg:'Tạo tài khoản thành công. Đăng nhập để tiếp tục.'};
+    }
+    $('#btn-login').addEventListener('click', async ()=>{
+      const email = ($('#login-email').value||'').trim().toLowerCase(); const pass = $('#login-pass').value||'';
+      const res = await login(email, pass);
+      $('#login-msg').textContent = res.ok ? (res.role==='admin'?'Đăng nhập admin thành công!':'Đăng nhập thành công!') : (res.msg||'Đăng nhập thất bại');
+      if(res.ok){ setUserUI(); location.hash = (res.role==='admin'||res.role==='subadmin')? '#admin' : '#product'; }
+    });
+    $('#btn-register').addEventListener('click', async ()=>{
+      const res = await register( ($('#reg-name').value||'').trim(), ($('#reg-email').value||'').trim().toLowerCase(), $('#reg-pass1').value||'', $('#reg-pass2').value||'', $('#reg-agree').checked );
+      $('#reg-msg').textContent = res.msg || (res.ok?'Tạo tài khoản thành công.':'Đăng ký thất bại.');
+      if(res.ok){ location.hash = '#auth'; $('#login-email').value = ($('#reg-email').value||'').trim().toLowerCase(); $('#login-pass').value=''; }
+    });
+
+    let voucherState = null; let attachedFile = null;
+    function applyVoucher(code){
+      const sess = getSession();
+      const vlist = getVouchers(); const v = vlist[code];
+      const msg = $('#voucher-msg');
+      if(!v){ msg.textContent='Mã không hợp lệ.'; voucherState=null; $('#prod-voucher-view').textContent='—'; return; }
+      const vuList = getVU();
+      const hasAssignments = vuList.some(e=>e.code===code);
+      if(hasAssignments){
+        if(!sess){ msg.textContent='Mã này được cấp cho tài khoản cụ thể. Vui lòng đăng nhập.'; voucherState=null; return; }
+        const entry = vuList.find(e=>e.code===code && e.email===sess.email);
+        if(!entry){ msg.textContent='Mã này được cấp cho tài khoản khác.'; voucherState=null; return; }
+        const left = vuLeft(sess.email, code);
+        if(left<=0){ msg.textContent='Bạn đã dùng hết lượt cho mã này.'; voucherState=null; return; }
+      }
+      if(!isVoucherAvailable(v)){ msg.textContent='Mã đã hết lượt sử dụng.'; voucherState=null; $('#prod-voucher-view').textContent='—'; return; }
+      voucherState = Object.assign({code}, v);
+      msg.textContent='Đã áp dụng mã: ' + code;
+      $('#prod-voucher-view').textContent = code;
+    }
+    function renderFileMeta(){
+      const meta = $('#file-meta');
+      if(!attachedFile){ meta.innerHTML = '<em>Chưa có tệp.</em>'; return; }
+      const mb = (attachedFile.size/(1024*1024)).toFixed(2);
+      meta.innerHTML = `Đã chọn: <strong>${attachedFile.name}</strong> (${mb} MB) <a href="#" id="rm-file" class="muted" style="text-decoration:underline;margin-left:6px">xoá</a>`;
+      $('#rm-file').addEventListener('click', (e)=>{ e.preventDefault(); attachedFile=null; $('#file-input').value=''; renderFileMeta(); });
+    }
+    function checkout(){
+      const sess = getSession(); const email = sess?.email || 'guest';
+      const qty = Math.max(1, parseInt($('#prod-qty').value||'1',10));
+      const payPref = document.querySelector('input[name="pay"]:checked')?.value || 'bank';
+      const order = { id:'NP'+Date.now(), email, qty, unitPrice:null, subtotal:0, ship:0, discount:0, total:0,
+        voucher: voucherState?.code || null, payMethod:payPref, status:'awaiting_quote', note:$('#prod-note').value||'',
+        fileName: attachedFile?.name || null, ts:Date.now(), voucherCounted:false, voucherUserCounted:false };
+      const orders = getOrders(); orders.unshift(order); setOrders(orders);
+      alert('Đã tạo yêu cầu. Mã đơn: ' + order.id + (sess? '\nTài khoản: '+email : '\n(Chưa đăng nhập)'));
+      $('#prod-status').textContent='Đã gửi yêu cầu (chờ báo giá)'; renderOrdersOfUser();
+    }
+    $('#btn-apply-voucher').addEventListener('click', ()=>{ const code = ($('#voucher-input').value||'').trim().toUpperCase(); if(!code) return; applyVoucher(code); });
+    $('#pick-file').addEventListener('click', ()=> $('#file-input').click());
+    $('#file-input').addEventListener('change', e=>{ attachedFile = e.target.files?.[0]||null; renderFileMeta(); });
+    $('#dropzone').addEventListener('dragover', e=>{ e.preventDefault(); $('#dropzone').style.background='#eef2ff'; });
+    $('#dropzone').addEventListener('dragleave', e=>{ $('#dropzone').style.background='#f1f5f9'; });
+    $('#dropzone').addEventListener('drop', e=>{ e.preventDefault(); $('#dropzone').style.background='#f1f5f9'; attachedFile = e.dataTransfer.files?.[0]||null; renderFileMeta(); });
+    $$('.copy').forEach(btn=>btn.addEventListener('click',()=>{ navigator.clipboard?.writeText(btn.getAttribute('data-copy')); alert('Đã copy: ' + btn.getAttribute('data-copy')); }));
+    $$('input[name="pay"]').forEach(r=>r.addEventListener('change',()=>{
+      const val = document.querySelector('input[name="pay"]:checked').value;
+      $('#pay-bank').classList.toggle('hide', val!=='bank');
+      $('#pay-cod').classList.toggle('hide', val!=='cod');
+    }));
+    $('#btn-checkout').addEventListener('click', checkout);
+
+    function renderOrdersOfUser(){
+      const sess = getSession(); const wrap = $('#orders-of-user');
+      if(!sess){ wrap.innerHTML = '<div class="muted">Hãy đăng nhập để xem đơn của bạn.</div>'; return; }
+      const orders = getOrders().filter(o=>o.email===sess.email);
+      if(orders.length===0){ wrap.innerHTML='<div class="muted">Chưa có đơn.</div>'; return; }
+      const table = document.createElement('table');
+      table.innerHTML = '<thead><tr><th>ID</th><th>Trạng thái</th><th>Voucher</th><th>Thanh toán</th><th>Tổng</th><th>Ghi chú</th></tr></thead>';
+      const tbody = document.createElement('tbody');
+      orders.forEach(o=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${o.id}</td><td>${o.status}</td><td>${o.voucher||''}</td><td>${o.payMethod}</td><td>${o.total? fmt(o.total): 'Chờ báo giá'}</td><td>${o.note||''}</td>`;
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); wrap.innerHTML=''; wrap.appendChild(table);
+    }
+
+    function renderUserCodesPanel(){
+      const wrap = $('#user-codes');
+      const sess = getSession();
+      if(!sess){ wrap.innerHTML = '<div class="muted">Hãy đăng nhập để xem mã của bạn.</div>'; return; }
+
+      const email = sess.email;
+      const assigned = getVU().filter(e=>e.email===email);
+      const got = getUserCodes(email);
+      const box = document.createElement('div');
+
+      const head = document.createElement('div');
+      head.innerHTML = `<div class="summary-row"><span>Được cấp (Admin):</span><strong>${assigned.length} mã</strong></div>
+                        <div class="summary-row"><span>Đã nhận qua gacha:</span><strong>${got.length} mã</strong></div>`;
+      box.appendChild(head);
+
+      const list = document.createElement('div');
+      if(assigned.length){
+        const h = document.createElement('div'); h.innerHTML = '<b>Mã được cấp:</b>'; list.appendChild(h);
+        assigned.forEach(e=>{
+          const left = vuLeft(email, e.code);
+          const span = document.createElement('span');
+          span.className='code-badge';
+          span.textContent = `${e.code} • còn: ${left===Infinity?'∞':left}`;
+          list.appendChild(span);
+        });
+      }
+      if(got.length){
+        const h2 = document.createElement('div'); h2.style.marginTop='8px'; h2.innerHTML = '<b>Mã gacha đã nhận (gần đây):</b>'; list.appendChild(h2);
+        got.slice(-10).reverse().forEach(it=>{
+          const span = document.createElement('span');
+          span.className='code-badge';
+          span.textContent = `${it.code} • ${it.date}`;
+          list.appendChild(span);
+        });
+      }
+      if(!assigned.length && !got.length){
+        list.innerHTML = '<div class="muted">Chưa có mã nào.</div>';
+      }
+      box.appendChild(list);
+
+      wrap.innerHTML='';
+      wrap.appendChild(box);
+    }
+
+    function weightedPick(cfg){ let sum=0; const w=cfg.map(x=>Math.max(0,Number(x.weight??1))); w.forEach(v=>sum+=v); if(sum<=0) return -1; let r=Math.random()*sum,acc=0; for(let i=0;i<cfg.length;i++){ acc+=w[i]; if(r<=acc) return i; } return cfg.length-1; }
+    function updateGachaNote(){
+      const s=getSession(); const map=getGachaMap(); const day=todayYMD();
+      $('#gacha-limit-note').textContent = s? ((map[s.email]===day)? 'Hôm nay đã rút' : 'Chưa rút hôm nay') : 'Cần đăng nhập';
+    }
+    function openGacha(){ $('#gacha-modal').classList.add('show'); updateGachaNote(); $('#gacha-result').textContent='Chưa rút'; $('#btn-apply-gacha').dataset.code=''; }
+    function closeGacha(){ $('#gacha-modal').classList.remove('show'); }
+    $('#btn-gacha').addEventListener('click', openGacha);
+    $('#gacha-close').addEventListener('click', closeGacha);
+    $('#gacha-close-btn').addEventListener('click', closeGacha);
+
+    function doGacha(){
+      const sess = getSession();
+      if(!sess){ alert('Vui lòng đăng nhập để rút gacha.'); return; }
+      const map=getGachaMap(); const day=todayYMD();
+      if(map[sess.email]===day){ alert('Bạn đã rút hôm nay rồi. Hãy quay lại vào ngày mai!'); updateGachaNote(); return; }
+      map[sess.email]=day; setGachaMap(map); updateGachaNote();
+
+      const cfg = getGacha(); const idx = weightedPick(cfg);
+      if(idx<0){ $('#gacha-result').textContent='Cấu hình gacha chưa hợp lệ (trọng số=0).'; return; }
+      const prize = cfg[idx];
+      if(prize && prize.code){
+        $('#gacha-result').textContent = 'Bạn nhận: ' + prize.label + ' → ' + prize.code;
+        $('#btn-apply-gacha').dataset.code = prize.code;
+        pushUserCode(sess.email, prize.code, prize.label);
+        renderUserCodesPanel();
+      } else {
+        $('#gacha-result').textContent = 'Rất tiếc, chúc bạn may mắn lần sau!';
+        $('#btn-apply-gacha').dataset.code = '';
+      }
+    }
+    $('#btn-gacha-draw').addEventListener('click', doGacha);
+    $('#btn-apply-gacha').addEventListener('click', ()=>{
+      const code = $('#btn-apply-gacha').dataset.code || '';
+      if(!code) return alert('Chưa có mã hợp lệ để áp dụng.');
+      $('#voucher-input').value = code; applyVoucher(code); alert('Đã áp dụng mã: ' + code);
+    });
+
+    function loadFabPos(){
+      const pos = load('np_gacha_pos', null);
+      const fab = document.getElementById('gacha-fab');
+      if(pos){
+        fab.style.left = pos.x + 'px';
+        fab.style.top = pos.y + 'px';
+        fab.style.right = 'auto';
+        fab.style.transform = 'translate(0,0)';
+      }
+    }
+    function makeDraggableFab(){
+      const fab = document.getElementById('gacha-fab');
+      let dragging=false, offX=0, offY=0;
+      const isButton = (el)=> el && (el.tagName==='BUTTON' || el.closest('button'));
+      const onDown = (e)=>{
+        if(isButton(e.target)) return;
+        dragging=true; fab.classList.add('dragging');
+        const rect = fab.getBoundingClientRect();
+        const cx = (e.touches? e.touches[0].clientX : e.clientX);
+        const cy = (e.touches? e.touches[0].clientY : e.clientY);
+        offX = cx - rect.left; offY = cy - rect.top;
+        fab.style.right='auto'; fab.style.transform='translate(0,0)';
+        e.preventDefault();
+      };
+      const onMove = (e)=>{
+        if(!dragging) return;
+        const cx = (e.touches? e.touches[0].clientX : e.clientX);
+        const cy = (e.touches? e.touches[0].clientY : e.clientY);
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const rect = fab.getBoundingClientRect();
+        const w = rect.width, h = rect.height;
+        let x = cx - offX, y = cy - offY;
+        x = Math.min(vw - w - 6, Math.max(6, x));
+        y = Math.min(vh - h - 6, Math.max(70, y));
+        fab.style.left = x+'px'; fab.style.top = y+'px';
+        e.preventDefault();
+      };
+      const onUp = ()=>{
+        if(!dragging) return;
+        dragging=false; fab.classList.remove('dragging');
+        const rect = fab.getBoundingClientRect();
+        save('np_gacha_pos', {x: rect.left, y: rect.top});
+      };
+      fab.addEventListener('mousedown', onDown);
+      fab.addEventListener('touchstart', onDown, {passive:false});
+      window.addEventListener('mousemove', onMove, {passive:false});
+      window.addEventListener('touchmove', onMove, {passive:false});
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchend', onUp);
+    }
+
+    function computeDiscount(subtotal, v){ if(!v) return 0; if(v.type==='freeship') return 0; let d=0; if(v.type==='fixed') d=v.value||0; if(v.type==='percent') d=subtotal*(v.value||0)/100; if(v.cap) d=Math.min(d,v.cap); return Math.min(d,subtotal); }
+    function renderOrdersTable(){
+      const tbody = $('#orders-table tbody'); tbody.innerHTML='';
+      const orders = getOrders(); const vouchers = getVouchers(); const ro = !canEdit();
+      for(const o of orders){
+        const unit = Number(o.unitPrice||0); const sub = unit * Number(o.qty||0);
+        const v = o.voucher ? vouchers[o.voucher] : null; const validVoucher = v && isVoucherAvailable(v);
+        const disc = validVoucher ? computeDiscount(sub, v) : 0; const total = Math.max(0, sub - disc + Number(o.ship||0));
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${o.id}</td>
+          <td>${o.email}</td>
+          <td><input type="number" value="${o.qty}" min="1" class="ord-qty" style="width:70px" ${ro?'disabled':''}/></td>
+          <td><input type="number" value="${o.unitPrice||0}" min="0" class="ord-unit" style="width:110px" ${ro?'disabled':''}/></td>
+          <td class="ord-sub">${fmt(sub)}</td>
+          <td><input type="number" value="${o.ship||0}" min="0" class="ord-ship" style="width:100px" ${ro?'disabled':''}/></td>
+          <td><input type="text" value="${o.voucher||''}" class="ord-vcode" style="width:120px" ${ro?'disabled':''}/></td>
+          <td class="ord-disc">${fmt(disc)}</td>
+          <td class="ord-total">${fmt(total)}</td>
+          <td>
+            <select class="ord-pay" ${ro?'disabled':''}>
+              <option value="bank" ${o.payMethod==='bank'?'selected':''}>Bank</option>
+              <option value="cod" ${o.payMethod==='cod'?'selected':''}>COD</option>
+            </select>
+          </td>
+          <td>
+            <select class="ord-status" ${ro?'disabled':''}>
+              <option value="awaiting_quote" ${o.status==='awaiting_quote'?'selected':''}>Chờ báo giá</option>
+              <option value="awaiting_payment" ${o.status==='awaiting_payment'?'selected':''}>Chờ thanh toán</option>
+              <option value="pending_cod" ${o.status==='pending_cod'?'selected':''}>Chờ giao COD</option>
+              <option value="processing" ${o.status==='processing'?'selected':''}>Đang xử lý</option>
+              <option value="paid" ${o.status==='paid'?'selected':''}>Đã thanh toán</option>
+              <option value="shipped" ${o.status==='shipped'?'selected':''}>Đã giao</option>
+              <option value="completed" ${o.status==='completed'?'selected':''}>Hoàn tất</option>
+              <option value="canceled" ${o.status==='canceled'?'selected':''}>Hủy</option>
+            </select>
+          </td>
+          <td>${o.note||''}</td>
+          <td>${o.fileName||''}</td>
+          <td class="table-actions">${ro?'—':'<button class="btn small save">Lưu</button> <button class="btn small danger del">Xoá</button>'}</td>`;
+        if(!ro){
+          tr.querySelector('.save').addEventListener('click', ()=>{
+            const qty = Math.max(1, parseInt(tr.querySelector('.ord-qty').value||'1',10));
+            const unit = Math.max(0, parseInt(tr.querySelector('.ord-unit').value||'0',10));
+            const ship = Math.max(0, parseInt(tr.querySelector('.ord-ship').value||'0',10));
+            const code = tr.querySelector('.ord-vcode').value.trim().toUpperCase();
+            const pay = tr.querySelector('.ord-pay').value;
+            const status = tr.querySelector('.ord-status').value;
+
+            const vlist = getVouchers(); let v = code? vlist[code]: null;
+            const subtotal = unit*qty; let discount = 0; let voucherOk = v && isVoucherAvailable(v);
+            const vuList = getVU(); const email = o.email;
+            const hasAssign = vuList.some(e=>e.code===code);
+            let entry = null;
+            if(hasAssign){ entry = vuList.find(e=>e.code===code && e.email===email); if(!entry) voucherOk=false; }
+            if(voucherOk){ discount = computeDiscount(subtotal, v); }
+
+            const total = Math.max(0, subtotal - discount + ship);
+            tr.querySelector('.ord-sub').textContent = fmt(subtotal);
+            tr.querySelector('.ord-disc').textContent = fmt(discount);
+            tr.querySelector('.ord-total').textContent = fmt(total);
+
+            const orders = getOrders(); const idx = orders.findIndex(x=>x.id===o.id);
+            if(idx>=0){
+              const prev = orders[idx];
+              const prevCode = prev.voucher||null;
+              const prevCounted = !!prev.voucherCounted;
+              const prevUCounted = !!prev.voucherUserCounted;
+              const vmap = getVouchers();
+              const vusers = getVU();
+
+              if(prevCode && prevCounted && (!COUNT_STATUSES.includes(status) || !code || code!==prevCode)){
+                if(vmap[prevCode]) vmap[prevCode].used = Math.max(0,(vmap[prevCode].used||0)-1);
+                prev.voucherCounted = false;
+              }
+              if(prevCode && prevUCounted && (!COUNT_STATUSES.includes(status) || !code || code!==prevCode)){
+                const e = vusers.find(x=>x.email===prev.email && x.code===prevCode);
+                if(e) e.used = Math.max(0,(e.used||0)-1);
+                prev.voucherUserCounted = false;
+              }
+
+              let nowCounted = prev.voucherCounted;
+              let nowUCounted = prev.voucherUserCounted;
+
+              if(code && COUNT_STATUSES.includes(status) && voucherOk && !prev.voucherCounted){
+                if((vmap[code].maxUses||0)===0 || (vmap[code].used||0) < (vmap[code].maxUses||0)){
+                  vmap[code].used = (vmap[code].used||0) + 1; nowCounted = true;
+                } else {
+                  alert('Mã ' + code + ' đã hết lượt hệ thống.'); voucherOk=false; discount=0;
+                }
+              }
+              if(code && COUNT_STATUSES.includes(status) && voucherOk){
+                const e = vusers.find(x=>x.email===email && x.code===code);
+                if(e && !prev.voucherUserCounted){
+                  const max = Number(e.maxUses||0); const used = Number(e.used||0);
+                  if(max===0 || used < max){ e.used = used + 1; nowUCounted = true; }
+                  else { alert('Mã ' + code + ' đã hết lượt cho tài khoản này.'); voucherOk=false; discount=0; }
+                }
+              }
+
+              setVouchers(vmap); setVU(vusers);
+              orders[idx] = {...prev, qty, unitPrice:unit, ship, voucher:(voucherOk?code:null), discount, subtotal, total, payMethod:pay, status, voucherCounted:nowCounted, voucherUserCounted:nowUCounted};
+              setOrders(orders); alert('Đã lưu đơn ' + o.id); renderOrdersOfUser(); renderUserCodesPanel();
+            }
+          });
+          tr.querySelector('.del').addEventListener('click', ()=>{
+            if(!confirm('Xoá đơn ' + o.id + '?')) return;
+            const orders = getOrders();
+            if(o.voucher && o.voucherCounted){ const vmap=getVouchers(); if(vmap[o.voucher]) vmap[o.voucher].used=Math.max(0,(vmap[o.voucher].used||0)-1); setVouchers(vmap); }
+            if(o.voucher && o.voucherUserCounted){ const vusers=getVU(); const e=vusers.find(x=>x.email===o.email && x.code===o.voucher); if(e) e.used=Math.max(0,(e.used||0)-1); setVU(vusers); }
+            setOrders(orders.filter(x=>x.id!==o.id)); renderOrdersTable(); renderOrdersOfUser(); renderUserCodesPanel();
+          });
+        }
+        tbody.appendChild(tr);
+      }
+    }
+    function exportCSV(){
+      const orders = getOrders();
+      const cols = ['id','email','qty','unitPrice','subtotal','ship','discount','total','voucher','payMethod','status','note','fileName','ts','voucherCounted','voucherUserCounted'];
+      const rows = [cols.join(',')];
+      orders.forEach(o=>{ const r = cols.map(k=>JSON.stringify(o[k] ?? '')); rows.push(r.join(',')); });
+      const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='novaprint_orders.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+    $('#btn-export-csv').addEventListener('click', exportCSV);
+
+    function renderVoucherTable(){
+      const tbody = $('#voucher-table tbody'); tbody.innerHTML='';
+      const vlist = getVouchers(); const ro = !canEdit();
+      Object.entries(vlist).forEach(([code, v])=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${code}</td><td>${v.type}</td><td>${v.value||''}</td><td>${v.min||''}</td><td>${v.cap||''}</td><td>${v.used||0}</td><td>${v.maxUses||0}</td><td>${ro?'—':'<button class="btn small danger rm">Xoá</button>'}</td>`;
+        if(!ro){ tr.querySelector('.rm').addEventListener('click', ()=>{ const cur = getVouchers(); delete cur[code]; setVouchers(cur); renderVoucherTable(); renderVU(); }); }
+        tbody.appendChild(tr);
+      });
+      $('#voucher-controls').classList.toggle('disabled', ro);
+      const dl = $('#code-list'); dl.innerHTML=''; Object.keys(vlist).forEach(c=>{ const o=document.createElement('option'); o.value=c; dl.appendChild(o); });
+    }
+    $('#v-add').addEventListener('click', ()=>{
+      if(!canEdit()) return alert('Chỉ Admin mới thêm/sửa voucher.');
+      const code = $('#v-code').value.trim().toUpperCase(); if(!code) return alert('Nhập CODE');
+      const type = $('#v-type').value;
+      const value = parseInt($('#v-value').value||'0',10)||undefined;
+      const min = parseInt($('#v-min').value||'0',10)||undefined;
+      const cap = parseInt($('#v-cap').value||'0',10)||undefined;
+      const max = parseInt($('#v-max').value||'0',10)||0;
+      const v = getVouchers(); if(!v[code]) v[code]={type, used:0}; else v[code].type=type;
+      v[code].value=value; v[code].min=min; v[code].cap=cap; v[code].maxUses=max; v[code].used = v[code].used||0;
+      setVouchers(v); renderVoucherTable(); alert('Đã thêm/cập nhật mã ' + code);
+    });
+
+    function renderVU(){
+      const tbody = $('#vu-table tbody'); tbody.innerHTML='';
+      const list = getVU(); const ro = !canEdit();
+      list.forEach((e,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${e.email}</td><td>${e.code}</td><td>${e.used||0}</td><td>${e.maxUses||0}</td><td>${ro?'—':'<button class="btn small danger rm">Xoá</button>'}</td>`;
+        if(!ro){ tr.querySelector('.rm').addEventListener('click', ()=>{ const L=getVU(); L.splice(i,1); setVU(L); renderVU(); }); }
+        tbody.appendChild(tr);
+      });
+      $('#vu-controls').classList.toggle('disabled', ro);
+    }
+    $('#vu-add').addEventListener('click', ()=>{
+      if(!canEdit()) return alert('Chỉ Admin mới cấp mã theo tài khoản.');
+      const email = ($('#vu-email').value||'').trim().toLowerCase();
+      const code = ($('#vu-code').value||'').trim().toUpperCase();
+      const max = Math.max(0, parseInt($('#vu-max').value||'0',10));
+      if(!email || !code) return alert('Nhập email và code');
+      const vmap = getVouchers(); if(!vmap[code]) return alert('Code chưa tồn tại trong danh sách voucher.');
+      const list = getVU(); const idx = list.findIndex(x=>x.email===email && x.code===code);
+      if(idx>=0){ list[idx].maxUses = max; } else { list.push({email, code, maxUses:max, used:0}); }
+      setVU(list); renderVU(); alert('Đã cấp mã ' + code + ' cho ' + email);
+    });
+
+    function renderGachaConfig(){
+      const wrap = $('#gacha-config'); wrap.innerHTML='';
+      const cfg = getGacha(); const ro = !canEdit();
+      const table = document.createElement('table');
+      table.innerHTML = '<thead><tr><th>#</th><th>Nhãn</th><th>Code</th><th>Trọng số</th><th></th></tr></thead>';
+      const tbody = document.createElement('tbody');
+      cfg.forEach((it,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td><input type="text" value="${it.label||''}" class="g-label" ${ro?'disabled':''}/></td>
+          <td><input type="text" value="${it.code||''}" class="g-code" ${ro?'disabled':''}/></td>
+          <td><input type="number" min="0" value="${it.weight??1}" class="g-weight" style="width:100px" ${ro?'disabled':''}/></td>
+          <td>${ro?'—':'<button class="btn small danger rm">Xoá</button>'}</td>`;
+        if(!ro){ tr.querySelector('.rm').addEventListener('click', ()=>{ const c=getGacha(); c.splice(i,1); setGacha(c); renderGachaConfig(); }); }
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody); wrap.appendChild(table);
+      $('#gacha-buttons').classList.toggle('disabled', ro);
+    }
+    $('#gacha-add').addEventListener('click', ()=>{
+      if(!canEdit()) return alert('Chỉ Admin mới chỉnh sửa gacha.');
+      const c = getGacha(); c.push({label:'SALE10', code:'SALE10', weight:1}); setGacha(c); renderGachaConfig();
+    });
+    $('#gacha-save').addEventListener('click', ()=>{
+      if(!canEdit()) return alert('Chỉ Admin mới lưu gacha.');
+      const rows = Array.from($('#gacha-config').querySelectorAll('tbody tr'));
+      const c = rows.map(r=>({label:r.querySelector('.g-label').value, code:(r.querySelector('.g-code').value||'')||null, weight:Number(r.querySelector('.g-weight').value||1)}));
+      setGacha(c); alert('Đã lưu cấu hình gacha.');
+    });
+
+    function renderUsersTable(){
+      const tbody = $('#users-table tbody'); tbody.innerHTML='';
+      const users = getUsers();
+      Object.values(users).forEach(u=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${u.email}</td><td>${u.name||''}</td><td>${u.role||'user'}</td><td class="table-actions">${isAdmin()? '': '—'}</td>`;
+        if(isAdmin()){
+          const actions = tr.querySelector('.table-actions');
+          const btnMake = document.createElement('button'); btnMake.className='btn small'; btnMake.textContent='Cấp phó admin';
+          const btnRevoke = document.createElement('button'); btnRevoke.className='btn small danger'; btnRevoke.textContent='Gỡ phó admin';
+          if((u.role||'user')==='subadmin'){ actions.appendChild(btnRevoke); btnRevoke.addEventListener('click', ()=>{ const us=getUsers(); us[u.email].role='user'; setUsers(us); renderUsersTable(); setUserUI(); }); }
+          else if(u.email!==ADMIN_EMAIL){ actions.appendChild(btnMake); btnMake.addEventListener('click', ()=>{ const us=getUsers(); us[u.email].role='subadmin'; setUsers(us); renderUsersTable(); setUserUI(); }); }
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderAdmin(){ setUserUI(); renderOrdersTable(); renderVoucherTable(); renderVU(); renderGachaConfig(); renderUsersTable(); }
+    function ensureAdminSeed(){ const users=getUsers(); if(!users[ADMIN_EMAIL]){ users[ADMIN_EMAIL]={name:'Administrator', email:ADMIN_EMAIL, role:'admin', hash:'seed'}; setUsers(users); } }
+
+    ensureAdminSeed(); setUserUI(); (function(){ const meta=$('#file-meta'); if(meta) meta.innerHTML='<em>Chưa có tệp.</em>'; })(); route(); loadFabPos(); makeDraggableFab();
+  </script>
+
+<!-- === Minimal Supabase Bridge (UI preserved) === -->
+<script type="module">
+  // 0) KEEP UI — this script only wires logic, no CSS/HTML changes.
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // TODO: replace with your Supabase values (Settings → API)
+  const SUPABASE_URL = "https://zmomwuqqoeirgtupehhu.supabase.co/";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inptb213dXFxb2Vpcmd0dXBlaGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyOTAyMzMsImV4cCI6MjA3Nzg2NjIzM30.AOYvAp_qhecLW4xPQAo-xIJ-whjt3OZimmle-gZLIf0";
+
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.sb = sb;
+
+  // Helpers
+  const $ = (s)=>document.querySelector(s);
+  const fmt = (n)=> (n??0).toLocaleString('vi-VN');
+
+  // Session -> header badges (if exists)
+  async function refreshHeader() {
+    try {
+      const { data:{ user } } = await sb.auth.getUser();
+      const emailEl = document.querySelector("[data-user-email]");
+      const roleEl = document.querySelector("[data-role-tag]");
+      if (!user) {
+        if (emailEl) emailEl.textContent = "Chưa đăng nhập";
+        if (roleEl) roleEl.textContent = "-";
+        const adminLink = document.querySelector("#admin-link");
+        if (adminLink) adminLink.classList.add("hidden");
+        return;
+      }
+      if (emailEl) emailEl.textContent = user.email;
+      const { data: prof } = await sb.from("profiles").select("role").eq("id", user.id).maybeSingle();
+      const role = prof?.role || "user";
+      if (roleEl) roleEl.textContent = role;
+      const adminLink = document.querySelector("#admin-link");
+      if (adminLink) adminLink.classList.toggle("hidden", !(role==="admin"||role==="subadmin"));
+    } catch(e) { /* ignore */ }
+  }
+
+  // Auth wire (if inputs exist)
+  $("#login-btn")?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    const email = $("#login-email")?.value?.trim();
+    const pass = $("#login-password")?.value ?? "";
+    if(!email||!pass) return alert("Nhập email & mật khẩu");
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) return alert(error.message);
+    await refreshHeader();
+    // route if admin/subadmin
+    const { data:{ user } } = await sb.auth.getUser();
+    const { data: prof } = await sb.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const role = prof?.role || "user";
+    if (role==="admin"||role==="subadmin") location.hash="#admin";
+  });
+
+  $("#register-btn")?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    const name = $("#reg-name")?.value?.trim() || "User";
+    const email = $("#reg-email")?.value?.trim();
+    const pass  = $("#reg-password")?.value ?? "";
+    if(!email||!pass) return alert("Nhập email & mật khẩu");
+    const { data, error } = await sb.auth.signUp({ email, password: pass, options:{ data:{ full_name:name } } });
+    if (error) return alert(error.message);
+    if (data.user) {
+      await sb.from("profiles").upsert({ id:data.user.id, email:data.user.email, full_name:name, role:"user" });
+    }
+    alert("Đăng ký thành công. Vui lòng đăng nhập.");
+    location.hash="#auth";
+  });
+
+  $("#logout-btn")?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    await sb.auth.signOut();
+    await refreshHeader();
+    location.hash="#auth";
+  });
+
+  // Create Order (if button exists)
+  $("#place-order-btn")?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    try{
+      const { data:{ user } } = await sb.auth.getUser();
+      const qty = Number($("#qty")?.value || "1");
+      const note = $("#note")?.value || "";
+      const voucher = $("#voucher")?.value?.trim() || null;
+      const payMethod = $("#pay_method")?.value || document.querySelector("input[name='pay_method']:checked")?.value || "bank";
+      const file = document.querySelector("input[type='file']")?.files?.[0];
+      const row = {
+        id: "NP" + Date.now(),
+        user_id: user?.id || null,
+        email: user?.email || "guest",
+        qty, unit_price:0, subtotal:0, ship:0, discount:0, total:0,
+        voucher, pay_method:payMethod, status:"awaiting_quote", note,
+        file_name: file?.name || null
+      };
+      const { error } = await sb.from("orders").insert(row);
+      if (error) throw error;
+      alert("Đã gửi yêu cầu in. Admin sẽ báo giá.");
+    }catch(err){ alert(err.message); }
+  });
+
+  // My Orders (if table exists)
+  async function renderMyOrders(){
+    const table = $("#my-orders-table"); if(!table) return;
+    const tbody = table.querySelector("tbody"); if(!tbody) return;
+    const { data:{ user } } = await sb.auth.getUser();
+    if(!user){ tbody.innerHTML = "<tr><td colspan='5'>Vui lòng đăng nhập.</td></tr>"; return; }
+    const { data, error } = await sb.from("orders").select("*").eq("user_id", user.id).order("ts",{ascending:false});
+    if (error){ tbody.innerHTML = "<tr><td colspan='5'>"+error.message+"</td></tr>"; return; }
+    if (!data?.length){ tbody.innerHTML = "<tr><td colspan='5' class='muted'>Chưa có đơn.</td></tr>"; return; }
+    tbody.innerHTML = "";
+    for(const r of data){
+      const tr = document.createElement("tr");
+      tr.innerHTML = \`
+        <td><code>\${r.id}</code></td>
+        <td>\${new Date(r.ts).toLocaleString("vi-VN")}</td>
+        <td class="right">\${r.qty??""}</td>
+        <td><span class="pill">\${r.status}</span></td>
+        <td>\${r.note||""}</td>\`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Admin Orders (if table exists)
+  async function renderAdminOrders(){
+    const table = $("#admin-orders"); if(!table) return;
+    const tbody = table.querySelector("tbody"); if(!tbody) return;
+    const { data:{ user } } = await sb.auth.getUser();
+    if(!user){ tbody.innerHTML = "<tr><td colspan='10'>Vui lòng đăng nhập.</td></tr>"; return; }
+    const { data: prof } = await sb.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const role = prof?.role || "user";
+    const readOnly = role !== "admin";
+
+    const { data, error } = await sb.from("orders").select("*").order("ts",{ascending:false});
+    if (error){ tbody.innerHTML = "<tr><td colspan='10'>"+error.message+"</td></tr>"; return; }
+    if (!data?.length){ tbody.innerHTML = "<tr><td colspan='10' class='muted'>Chưa có đơn.</td></tr>"; return; }
+    tbody.innerHTML = "";
+    for(const r of data){
+      const tr = document.createElement("tr");
+      tr.innerHTML = \`
+        <td><code>\${r.id}</code><br><small>\${new Date(r.ts).toLocaleString("vi-VN")}</small></td>
+        <td>\${r.email||""}</td>
+        <td>\${r.qty??0}</td>
+        <td><input data-f="unit_price" type="number" value="\${r.unit_price??0}" \${readOnly?"disabled":""}></td>
+        <td><input data-f="ship" type="number" value="\${r.ship??0}" \${readOnly?"disabled":""}></td>
+        <td><input data-f="discount" type="number" value="\${r.discount??0}" \${readOnly?"disabled":""}></td>
+        <td><input data-f="total" type="number" value="\${r.total??0}" \${readOnly?"disabled":""}></td>
+        <td>
+          <select data-f="status" \${readOnly?"disabled":""}>
+            \${["awaiting_quote","processing","paid","shipped","completed","cancelled"].map(s=>\`<option \${r.status===s?"selected":""}>\${s}</option>\`).join("")}
+          </select>
+        </td>
+        <td><input data-f="note" value="\${(r.note||"").replace(/"/g,'&quot;')}" \${readOnly?"disabled":""}></td>
+        <td>\${readOnly?"—":"<button data-act='save' class='btn small'>Lưu</button>"}</td>\`;
+      tr.querySelector('[data-act="save"]')?.addEventListener("click", async ()=>{
+        const patch = {};
+        tr.querySelectorAll("[data-f]").forEach(inp=>{
+          const k = inp.getAttribute("data-f");
+          patch[k] = (inp.type==="number") ? Number(inp.value||0) : inp.value;
+        });
+        const { error: e } = await sb.from("orders").update(patch).eq("id", r.id);
+        if (e) return alert(e.message);
+        tr.style.background="#f0fff7"; setTimeout(()=>tr.style.background="", 600);
+      });
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Vouchers (admin list if exists)
+  async function renderVouchersAdmin(){
+    const table = $("#vc-table"); if(!table) return;
+    const tbody = table.querySelector("tbody"); if(!tbody) return;
+    const { data, error } = await sb.from("vouchers").select("*").order("code");
+    if (error){ tbody.innerHTML="<tr><td colspan='5'>"+error.message+"</td></tr>"; return; }
+    tbody.innerHTML="";
+    for(const v of (data||[])){
+      const tr = document.createElement("tr");
+      tr.innerHTML = \`<td><code>\${v.code}</code></td><td>\${v.type}</td><td>\${fmt(v.value)}</td><td>\${v.used??0}</td><td>\${v.max_uses??0}</td>\`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Voucher Users (admin list if exists)
+  async function renderVoucherUsersAdmin(){
+    const table = $("#vu-table"); if(!table) return;
+    const tbody = table.querySelector("tbody"); if(!tbody) return;
+    const { data, error } = await sb.from("voucher_users").select("*").order("email");
+    if (error){ tbody.innerHTML="<tr><td colspan='4'>"+error.message+"</td></tr>"; return; }
+    tbody.innerHTML="";
+    for(const v of (data||[])){
+      const tr = document.createElement("tr");
+      tr.innerHTML = \`<td>\${v.email}</td><td><code>\${v.code}</code></td><td>\${v.used??0}</td><td>\${v.max_uses??0}</td>\`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Apply voucher (product side) — only shows info
+  $("#apply-voucher")?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    const code = $("#voucher")?.value?.trim().toUpperCase();
+    if(!code) return;
+    const msg = $("#voucher-message") || $("#voucher-result");
+    const { data: v } = await sb.from("vouchers").select("*").eq("code", code).maybeSingle();
+    if(!v){ if(msg) msg.textContent = "Mã không hợp lệ hoặc đã hết."; return; }
+    if(msg) msg.textContent = "Đã áp dụng: " + code + " (" + v.type + " " + v.value + ")";
+  });
+
+  // Gacha (if your page still uses gacha button with id 'gacha-btn')
+  $("#gacha-btn")?.addEventListener("click", async ()=>{
+    const { data:{ user } } = await sb.auth.getUser();
+    if(!user) return alert("Đăng nhập để rút gacha.");
+    const today = new Date().toISOString().slice(0,10);
+    const { error: e1 } = await sb.from("gacha_draws").insert({ user_id:user.id, day:today });
+    if(e1) return alert("Hôm nay bạn đã rút rồi.");
+    const { data: cfg } = await sb.from("gacha_config").select("*");
+    if(!cfg?.length) return alert("Chưa cấu hình gacha.");
+    const w = cfg.map(it=>Math.max(0, it.weight??1));
+    const sum = w.reduce((a,b)=>a+b,0);
+    let r = Math.random()*sum, acc=0, pick=cfg[cfg.length-1];
+    for(let i=0;i<cfg.length;i++){ acc+=w[i]; if(r<=acc){ pick=cfg[i]; break; } }
+    if(pick.code){
+      await sb.from("user_codes").insert({ user_id:user.id, code:pick.code, label:pick.label });
+      alert("Bạn nhận: "+pick.code+" ("+(pick.label||"")+")");
+    } else {
+      alert(pick.label||"Chúc may mắn lần sau!");
+    }
+  });
+
+  // Router-ish: render when hash matches sections present in your HTML
+  function renderByHash(){
+    const h = (location.hash||"").toLowerCase();
+    if(h.includes("admin")) { renderAdminOrders(); renderVouchersAdmin(); renderVoucherUsersAdmin(); }
+    if(h.includes("orders")) { renderMyOrders(); }
+    refreshHeader();
+  }
+  window.addEventListener("hashchange", renderByHash);
+  window.addEventListener("DOMContentLoaded", renderByHash);
+</script>
+<!-- === /Minimal Supabase Bridge === -->
+
+
+<script>
+  (function(){
+    try{
+      if(!document.getElementById('logo-anim')){
+        var el = document.querySelector('.logo') || Array.from(document.querySelectorAll('h1,h2,h3')).find(e=>/vinhdz/i.test(e.textContent||''));
+        if(el) el.id = 'logo-anim';
+      }
+    }catch(e){}
+  })();
+</script>
+
+</body>
+</html>
